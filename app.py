@@ -387,40 +387,63 @@ with tab5:
 with tab6:
     st.header("Assinatura Oficial")
     
-    if not st.session_state.data_store.get('final_file_blob'):
-        st.warning("Gere ou suba o documento na aba anterior.")
+    # CORREÇÃO: Verifica na raiz do session_state, onde a Aba 5 salva o arquivo
+    file_blob = st.session_state.get('final_file_blob')
+    
+    if not file_blob:
+        st.warning("⚠️ Gere ou suba o documento na aba anterior (Revisão e Conclusão).")
         st.stop()
         
+    # Garante que temos a lista de presença
+    raw_att = st.session_state.data_store.get("attendance_raw", "")
+    if not raw_att:
+        st.error("⚠️ Lista de presença vazia! Volte na Aba 1 e salve os metadados.")
+        st.stop()
+
+    # Cálculo de Prazo
     deadline_iso = authentique_utils.calculate_deadline()
     deadline_str = datetime.strptime(deadline_iso, '%Y-%m-%dT%H:%M:%S%z').strftime("%d/%m/%Y às %H:%M")
-    st.session_state.data_store["final_deadline"] = deadline_str
+    st.session_state.data_store["final_deadline"] = deadline_str # Salva para usar no email depois
 
-    st.info(f"Arquivo pronto: {st.session_state.get('final_filename')} | Prazo: {deadline_str}")
+    filename = st.session_state.get('final_filename', 'ATA.docx')
+    st.info(f"📂 Arquivo pronto: **{filename}**\n\n📅 Prazo de Assinatura: **{deadline_str}**")
 
+    # 1. Análise
+    st.markdown("### 1. Conferência de Signatários")
     if st.button("🔍 Analisar E-mails"):
-        signers, missing, display_map = authentique_utils.get_signers_emails(st.session_state.data_store["attendance_raw"])
-        st.session_state['auth_preview'] = {"signers": signers, "missing": missing, "map": display_map}
+        signers, missing, display_map = authentique_utils.get_signers_emails(raw_att)
+        st.session_state['auth_preview'] = {
+            "signers": signers, 
+            "missing": missing, 
+            "map": display_map
+        }
 
+    # 2. Preview e Envio
     if 'auth_preview' in st.session_state:
-        df = pd.DataFrame(st.session_state['auth_preview']['map'], columns=["Nome", "Email", "Status"])
+        prev = st.session_state['auth_preview']
+        
+        # Tabela de conferência
+        df = pd.DataFrame(prev['map'], columns=["Nome na Lista", "Email Encontrado", "Status"])
         st.table(df)
         
+        if prev['missing']:
+            st.warning(f"⚠️ {len(prev['missing'])} pessoas não possuem e-mail cadastrado e não receberão o documento.")
+        
+        st.markdown("### 2. Disparo")
+        # Botão de Envio
         if st.button("✅ Confirmar e Enviar para Authentique", type="primary"):
-            file_mem = io.BytesIO(st.session_state['final_file_blob'])
-            file_mem.name = st.session_state.get('final_filename', 'ATA.docx') # Importante para API saber extensão
+            # Prepara o arquivo em memória
+            file_mem = io.BytesIO(file_blob)
+            file_mem.name = filename
             
-            with st.spinner("Conectando API..."):
+            with st.spinner("Conectando à API Authentique..."):
                 try:
-                    doc_id = authentique_utils.send_to_authentique(file_mem, st.session_state['auth_preview']['signers'], doc_name=file_mem.name)
-                    st.success(f"Enviado! ID: {doc_id}")
+                    doc_id = authentique_utils.send_to_authentique(file_mem, prev['signers'], doc_name=filename)
+                    st.success(f"🎉 Enviado com sucesso! ID do Documento: {doc_id}")
+                    # Limpa o preview para evitar reenvio duplo acidental
                     del st.session_state['auth_preview']
                 except Exception as e:
-                    # Tratamento de erro de DNS melhorado
-                    err_msg = str(e)
-                    if "NameResolutionError" in err_msg or "getaddrinfo failed" in err_msg:
-                        st.error("❌ Erro de Conexão (DNS): Não foi possível encontrar 'api.authentique.com.br'. Verifique sua internet ou VPN.")
-                    else:
-                        st.error(f"❌ Erro no envio: {err_msg}")
+                    st.error(f"❌ Erro ao enviar: {e}")
 
 # --- TAB 7: NOTIFICAÇÃO ---
 with tab7:
