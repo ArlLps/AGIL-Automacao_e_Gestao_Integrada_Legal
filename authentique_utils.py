@@ -6,14 +6,16 @@ import streamlit as st
 import pytz
 import holidays
 import config
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 def calculate_deadline():
-    """Calcula data de bloqueio (deadline) considerando feriados e fds."""
+    """Calcula data de bloqueio (deadline) em ISO 8601."""
     try:
         tz = pytz.timezone(config.TIMEZONE)
         now = datetime.now(tz)
     except:
-        now = datetime.now() # Fallback se timezone falhar
+        now = datetime.now()
     
     # Tenta carregar feriados
     try:
@@ -30,7 +32,8 @@ def calculate_deadline():
             days_added += 1
             
     deadline = current_date.replace(hour=23, minute=59, second=59)
-    return deadline.strftime('%Y-%m-%dT%H:%M:%S%z')
+    # O método isoformat() é mais seguro que strftime para APIs
+    return deadline.isoformat()
 
 def get_signers_emails(names_text, emails_db_path='email.json'):
     try:
@@ -66,35 +69,42 @@ def get_signers_emails(names_text, emails_db_path='email.json'):
     return signers, missing, display_map
 
 def send_to_authentique(file_obj, signers, doc_name="ATA de Reunião"):
-    """Envia para API Authentique com tratamento de erro de conexão."""
+    """
+    Envia para API Authentique seguindo o padrão Multipart Form Data da documentação.
+    """
     
     url = "https://api.authentique.com.br/v2/graphql"
     
-    # Verifica se o token existe
     if "AUTHENTIQUE_TOKEN" not in st.secrets:
-        raise Exception("Token da Authentique não configurado no secrets (.streamlit/secrets.toml).")
+        raise Exception("Token da Authentique não configurado no secrets.")
         
     token = st.secrets["AUTHENTIQUE_TOKEN"]
     deadline = calculate_deadline()
     
+    # --- CORREÇÃO AQUI: Mudança de 'attributes' para 'document' conforme roteiro ---
     query = """
-    mutation CreateDocument($attributes: DocumentInput!, $signers: [SignerInput!]!, $file: Upload!) {
-        createDocument(attributes: $attributes, signers: $signers, file: $file) {
+    mutation CreateDocumentMutation($document: DocumentInput!, $signers: [SignerInput!]!, $file: Upload!) {
+        createDocument(document: $document, signers: $signers, file: $file) {
             id
             name
+            deadline_at
         }
     }
     """
     
+    # --- CORREÇÃO AQUI: Estrutura da variável ajustada ---
     variables = {
-        "attributes": {"name": doc_name, "deadline_at": deadline},
-        "signers": signers
+        "document": {
+            "name": doc_name,
+            "deadline_at": deadline
+        },
+        "signers": signers,
+        "file": None
     }
     
     operations = json.dumps({"query": query, "variables": variables})
     map_data = json.dumps({"0": ["variables.file"]})
     
-    # Garante que o ponteiro do arquivo esteja no início
     file_obj.seek(0)
     
     files = {
@@ -105,9 +115,13 @@ def send_to_authentique(file_obj, signers, doc_name="ATA de Reunião"):
     
     headers = {"Authorization": f"Bearer {token}"}
     
+    # Configuração de Retry para evitar erro de DNS/Conexão (visto na sua print)
+    session = requests.Session()
+    retries = Retry(total=3, backoff_factor=1, status_forcelist=[500, 502, 503, 504])
+    session.mount('https://', HTTPAdapter(max_retries=retries))
+
     try:
-        # Timeout aumentado para 60s devido a redes instáveis
-        response = requests.post(url, headers=headers, files=files, timeout=60)
+        response = session.post(url, headers=headers, files=files, timeout=30)
         
         if response.status_code != 200:
             raise Exception(f"Erro API ({response.status_code}): {response.text}")
@@ -119,8 +133,6 @@ def send_to_authentique(file_obj, signers, doc_name="ATA de Reunião"):
         return data["data"]["createDocument"]["id"]
         
     except requests.exceptions.ConnectionError:
-        raise Exception("Erro de Conexão: Não foi possível acessar o servidor da Authentique (DNS falhou). Verifique sua internet ou se há bloqueio de firewall.")
-    except requests.exceptions.Timeout:
-        raise Exception("Erro de Tempo: A conexão com a Authentique demorou muito. Tente novamente.")
+        raise Exception("Erro de Conexão: Falha ao resolver DNS ou conectar à Authentique. Verifique sua internet.")
     except Exception as e:
         raise Exception(f"Falha no envio: {str(e)}")
