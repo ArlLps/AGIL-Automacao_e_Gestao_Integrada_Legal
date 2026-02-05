@@ -12,14 +12,17 @@ from urllib3.util.retry import Retry
 def calculate_deadline():
     """
     Calcula data de bloqueio (deadline) +2 dias úteis.
-    Retorna OBRIGATORIAMENTE em UTC com sufixo 'Z' (ex: 2026-02-10T02:59:59Z).
+    Retorna em formato ISO 8601 compatível (+00:00).
     """
-    # 1. Define Fuso Horário Local (Brasília)
+    # 1. Define Fuso Horário Local e UTC
     try:
         tz_local = pytz.timezone(config.TIMEZONE)
     except:
         tz_local = pytz.timezone('America/Sao_Paulo')
     
+    tz_utc = pytz.utc
+    
+    # Usa data atual no fuso local
     now = datetime.now(tz_local)
     
     # 2. Carrega feriados
@@ -34,23 +37,28 @@ def calculate_deadline():
     # 3. Lógica de Dias Úteis
     while days_added < 2:
         current_date += timedelta(days=1)
-        
-        is_weekend = current_date.weekday() >= 5
-        # Conversão segura para date() para comparação
-        is_holiday = current_date.date() in br_holidays if br_holidays else False
-        
-        if not is_weekend and not is_holiday:
-            days_added += 1
+        # Verifica se é sábado(5) ou domingo(6)
+        if current_date.weekday() >= 5:
+            continue
             
-    # 4. Define horário final do dia local (23:59:59 em Brasília)
-    deadline_local = current_date.replace(hour=23, minute=59, second=59, microsecond=0)
+        # Verifica feriado
+        if current_date.date() in br_holidays:
+            continue
+            
+        days_added += 1
+            
+    # 4. Define horário final do dia local (23:59:59)
+    # AVISO: Com pytz, evitar .replace() direto se possível, mas se usar, normalizar.
+    # Criamos um datetime "naive" primeiro para setar a hora, depois localizamos.
+    naive_deadline = current_date.replace(hour=23, minute=59, second=59, microsecond=0, tzinfo=None)
+    deadline_local = tz_local.localize(naive_deadline)
     
-    # 5. CONVERTE PARA UTC (Fundamental para a API)
-    deadline_utc = deadline_local.astimezone(pytz.utc)
+    # 5. Converte para UTC
+    deadline_utc = deadline_local.astimezone(tz_utc)
     
-    # 6. Formatação manual estrita com 'Z' (Evita problemas do isoformat() que pode gerar +00:00)
-    # Exemplo gerado: "2026-02-11T02:59:59Z"
-    return deadline_utc.strftime('%Y-%m-%dT%H:%M:%SZ')
+    # 6. Retorna formato ISO Padrão (Ex: 2026-02-11T02:59:59+00:00)
+    # Isso substitui o 'Z' manual pelo offset '+00:00' que é mais aceito.
+    return deadline_utc.isoformat()
 
 def get_signers_emails(names_text, emails_db_path='email.json'):
     try:
