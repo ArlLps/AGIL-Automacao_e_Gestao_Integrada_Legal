@@ -1,7 +1,7 @@
 import requests
 import json
 import difflib
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta
 import streamlit as st
 import pytz
 import holidays
@@ -12,17 +12,17 @@ from urllib3.util.retry import Retry
 def calculate_deadline():
     """
     Calcula data de bloqueio (deadline) +2 dias úteis.
-    Retorna formato Naive ISO 8601 (YYYY-MM-DDTHH:MM:SS) para evitar rejeição de timezone.
+    Retorna OBRIGATORIAMENTE em UTC com sufixo 'Z' (ex: 2026-02-10T02:59:59Z).
     """
-    # Define Fuso Horário Local
+    # 1. Define Fuso Horário Local (Brasília)
     try:
-        tz = pytz.timezone(config.TIMEZONE)
+        tz_local = pytz.timezone(config.TIMEZONE)
     except:
-        tz = pytz.timezone('America/Sao_Paulo')
+        tz_local = pytz.timezone('America/Sao_Paulo')
     
-    now = datetime.now(tz)
+    now = datetime.now(tz_local)
     
-    # Carrega feriados com segurança
+    # 2. Carrega feriados
     try:
         br_holidays = holidays.Brazil(state=config.ESTADO_FERIADOS)
     except:
@@ -31,26 +31,26 @@ def calculate_deadline():
     days_added = 0
     current_date = now
     
-    # Lógica de Dias Úteis
+    # 3. Lógica de Dias Úteis
     while days_added < 2:
         current_date += timedelta(days=1)
         
-        # Verifica se é dia útil (Seg-Sex) e não é feriado
         is_weekend = current_date.weekday() >= 5
-        
-        # Conversão segura para date() para comparar com holidays
+        # Conversão segura para date() para comparação
         is_holiday = current_date.date() in br_holidays if br_holidays else False
         
         if not is_weekend and not is_holiday:
             days_added += 1
             
-    # Define horário final do dia (23:59:59)
-    # IMPORTANTE: replace(tzinfo=None) remove o offset (-03:00) para enviar formato "Naive"
-    # O microsecond=0 remove os milissegundos que APIs costumam rejeitar
-    deadline_naive = current_date.replace(hour=23, minute=59, second=59, microsecond=0, tzinfo=None)
+    # 4. Define horário final do dia local (23:59:59 em Brasília)
+    deadline_local = current_date.replace(hour=23, minute=59, second=59, microsecond=0)
     
-    # Retorna string limpa: "2026-02-10T23:59:59"
-    return deadline_naive.isoformat()
+    # 5. CONVERTE PARA UTC (Fundamental para a API)
+    deadline_utc = deadline_local.astimezone(pytz.utc)
+    
+    # 6. Formatação manual estrita com 'Z' (Evita problemas do isoformat() que pode gerar +00:00)
+    # Exemplo gerado: "2026-02-11T02:59:59Z"
+    return deadline_utc.strftime('%Y-%m-%dT%H:%M:%SZ')
 
 def get_signers_emails(names_text, emails_db_path='email.json'):
     try:
@@ -89,6 +89,7 @@ def send_to_authentique(file_obj, signers, doc_name="ATA de Reunião"):
     """
     Envia para API Authentique V2.
     """
+    # URL da API V2
     url = "https://api.autentique.com.br/v2/graphql"
     
     if "AUTHENTIQUE_TOKEN" not in st.secrets:
@@ -97,7 +98,7 @@ def send_to_authentique(file_obj, signers, doc_name="ATA de Reunião"):
     token = st.secrets["AUTHENTIQUE_TOKEN"]
     deadline = calculate_deadline()
     
-    # Query GraphQL
+    # Query GraphQL (Argumento 'document' é o correto)
     query = """
     mutation CreateDocumentMutation($document: DocumentInput!, $signers: [SignerInput!]!, $file: Upload!) {
         createDocument(document: $document, signers: $signers, file: $file) {
@@ -144,14 +145,13 @@ def send_to_authentique(file_obj, signers, doc_name="ATA de Reunião"):
         
         if "errors" in data:
             errors_str = json.dumps(data['errors'])
-            # Diagnóstico detalhado para o usuário
             if "invalid_date" in errors_str:
-                raise Exception(f"Formato de Data Rejeitado pela API. Tentativa enviada: '{deadline}'.")
+                raise Exception(f"Formato de Data Rejeitado. Enviado: '{deadline}'. Esperado: UTC com Z.")
             raise Exception(f"Erro Authentique: {errors_str}")
             
         return data["data"]["createDocument"]["id"]
         
     except requests.exceptions.ConnectionError:
-        raise Exception("Erro de Conexão: Falha ao conectar à Autentique. Verifique a URL e sua internet.")
+        raise Exception("Erro de Conexão: Falha ao conectar à Autentique.")
     except Exception as e:
         raise Exception(f"Falha no envio: {str(e)}")

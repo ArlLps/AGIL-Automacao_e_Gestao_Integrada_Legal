@@ -154,7 +154,7 @@ with tab3:
         
         with st.expander(f"📂 {titulo_display}", expanded=True):
             # Layout Título e Lixeira
-            c1, c2 = st.columns([5, 0.5], vertical_alignment="center")
+            c1, c2 = st.columns([5, 0.5], vertical_alignment="bottom")
             new_tit = c1.text_input("Título", value=pauta['titulo'], key=f"t_{pauta_id}")
             st.session_state.pautas_dinamicas[i]['titulo'] = new_tit
             
