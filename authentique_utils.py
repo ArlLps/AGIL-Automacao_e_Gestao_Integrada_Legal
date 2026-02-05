@@ -12,7 +12,7 @@ from urllib3.util.retry import Retry
 def calculate_deadline():
     """
     Calcula data de bloqueio (deadline) +2 dias úteis.
-    Retorna APENAS A DATA (YYYY-MM-DD) para evitar erros de validação de hora/fuso.
+    Retorna no formato ISO 8601 exigido: YYYY-MM-DDTHH:MM:SS.SSSZ
     """
     # 1. Define Fuso Horário Local (Brasília)
     try:
@@ -35,20 +35,18 @@ def calculate_deadline():
     # 3. Lógica de Dias Úteis
     while days_added < 2:
         current_date += timedelta(days=1)
-        
-        # Verifica se é sábado(5) ou domingo(6)
-        if current_date.weekday() >= 5:
+        if current_date.weekday() >= 5: # Sábado/Domingo
             continue
-            
-        # Verifica feriado
         if current_date.date() in br_holidays:
             continue
             
         days_added += 1
             
-    # 4. Formatação Simplificada (YYYY-MM-DD)
-    # Removemos hora/minuto/fuso para evitar o erro "invalid_date"
-    return current_date.strftime('%Y-%m-%d')
+    # 4. Formatação ISO 8601 (Conforme Documentação Autentique)
+    # A API espera: "2023-11-24T02:59:59.999Z"
+    # Ajustamos para o final do dia (23:59:59) e garantimos o sufixo Z
+    deadline_iso = current_date.replace(hour=23, minute=59, second=59, microsecond=999000)
+    return deadline_iso.strftime('%Y-%m-%dT%H:%M:%S.999Z')
 
 def get_signers_emails(names_text, emails_db_path='email.json'):
     try:
