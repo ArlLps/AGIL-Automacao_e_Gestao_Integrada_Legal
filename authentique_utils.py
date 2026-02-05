@@ -12,14 +12,15 @@ from urllib3.util.retry import Retry
 def calculate_deadline():
     """
     Calcula data de bloqueio (deadline) +2 dias úteis.
-    Retorna em UTC (Z) sem microssegundos para garantir validação da API.
+    Retorna formato ISO 8601 com Offset (ex: -03:00), que é nativo e seguro.
     """
+    # Define Fuso Horário de Brasília explicitamente
     try:
         tz = pytz.timezone(config.TIMEZONE)
-        now = datetime.now(tz)
     except:
-        # Fallback seguro para UTC se o timezone falhar
-        now = datetime.now(pytz.utc)
+        tz = pytz.timezone('America/Sao_Paulo')
+    
+    now = datetime.now(tz)
     
     # Tenta carregar feriados
     try:
@@ -33,17 +34,17 @@ def calculate_deadline():
     # Lógica de Dias Úteis
     while days_added < 2:
         current_date += timedelta(days=1)
-        if current_date.weekday() < 5 and current_date not in br_holidays:
+        # Se for dia útil (0-4 segunda-sexta) e não for feriado
+        # A comparação (date in holidays) exige objeto date, não datetime
+        if current_date.weekday() < 5 and current_date.date() not in br_holidays:
             days_added += 1
             
-    # Define horário final do dia (Brasília) e remove microssegundos (CRÍTICO PARA API)
-    deadline_local = current_date.replace(hour=23, minute=59, second=59, microsecond=0)
+    # Define horário final do dia e remove microssegundos (CRÍTICO)
+    deadline = current_date.replace(hour=23, minute=59, second=59, microsecond=0)
     
-    # Converte para UTC para envio universal
-    deadline_utc = deadline_local.astimezone(pytz.utc)
-    
-    # Retorna formato estrito: YYYY-MM-DDTHH:MM:SSZ
-    return deadline_utc.strftime('%Y-%m-%dT%H:%M:%SZ')
+    # O método isoformat() gera: '2026-02-06T23:59:59-03:00'
+    # Isso atende à regra "especifique o offset" da documentação
+    return deadline.isoformat()
 
 def get_signers_emails(names_text, emails_db_path='email.json'):
     try:
@@ -80,19 +81,18 @@ def get_signers_emails(names_text, emails_db_path='email.json'):
 
 def send_to_authentique(file_obj, signers, doc_name="ATA de Reunião"):
     """
-    Envia para API Authentique (Autentique V2) via Multipart Upload.
+    Envia para API Authentique (V2) com tratamento de erros de conexão e validação.
     """
     
-    # URL corrigida conforme seu sucesso de conexão recente (autentique vs authentique)
     url = "https://api.autentique.com.br/v2/graphql"
     
     if "AUTHENTIQUE_TOKEN" not in st.secrets:
         raise Exception("Token da Authentique não configurado no secrets.")
         
     token = st.secrets["AUTHENTIQUE_TOKEN"]
-    deadline = calculate_deadline() # Agora retorna formato UTC limpo (ex: 2026-02-10T02:59:59Z)
+    deadline = calculate_deadline() 
     
-    # Query ajustada para usar 'document' (Correção aplicada anteriormente)
+    # Query GraphQL
     query = """
     mutation CreateDocumentMutation($document: DocumentInput!, $signers: [SignerInput!]!, $file: Upload!) {
         createDocument(document: $document, signers: $signers, file: $file) {
@@ -103,6 +103,7 @@ def send_to_authentique(file_obj, signers, doc_name="ATA de Reunião"):
     }
     """
     
+    # Variáveis
     variables = {
         "document": {
             "name": doc_name,
@@ -136,8 +137,13 @@ def send_to_authentique(file_obj, signers, doc_name="ATA de Reunião"):
             raise Exception(f"Erro API ({response.status_code}): {response.text}")
             
         data = response.json()
+        
         if "errors" in data:
-            raise Exception(f"Erro Retornado pela Authentique: {json.dumps(data['errors'])}")
+            # Captura erro específico de validação para mostrar mensagem clara
+            errors_str = json.dumps(data['errors'])
+            if "invalid_date" in errors_str:
+                raise Exception(f"Erro de Data na API (Formato Inválido). Enviado: {deadline}")
+            raise Exception(f"Erro Retornado pela Authentique: {errors_str}")
             
         return data["data"]["createDocument"]["id"]
         
