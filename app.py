@@ -433,7 +433,7 @@ with tab6:
             with st.spinner("Conectando à API Authentique..."):
                 try:
                     doc_id = authentique_utils.send_to_authentique(file_mem, prev['signers'], doc_name=filename)
-                    st.success(f"🎉 Documento enviado! ID: {doc_id}")
+                    st.success(f"🎉 Documento enviado!")    
                     # Limpa preview para evitar reenvio
                     del st.session_state['auth_preview']
                 except Exception as e:

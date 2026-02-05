@@ -93,10 +93,6 @@ def send_to_authentique(file_obj, signers, doc_name="ATA de Reunião"):
     token = st.secrets["AUTHENTIQUE_TOKEN"]
     deadline = calculate_deadline()
     
-    # Debug visual
-    st.toast(f"📅 Data limite simplificada: {deadline}")
-    print(f"DEBUG DATA: {deadline}")
-    
     # Query GraphQL
     query = """
     mutation CreateDocumentMutation($document: DocumentInput!, $signers: [SignerInput!]!, $file: Upload!) {
