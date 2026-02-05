@@ -1,7 +1,7 @@
 import requests
 import json
 import difflib
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import streamlit as st
 import pytz
 import holidays
@@ -12,9 +12,9 @@ from urllib3.util.retry import Retry
 def calculate_deadline():
     """
     Calcula data de bloqueio (deadline) +2 dias úteis.
-    Retorna formato ISO 8601 com Offset (ex: -03:00), que é nativo e seguro.
+    Retorna formato Naive ISO 8601 (YYYY-MM-DDTHH:MM:SS) para evitar rejeição de timezone.
     """
-    # Define Fuso Horário de Brasília explicitamente
+    # Define Fuso Horário Local
     try:
         tz = pytz.timezone(config.TIMEZONE)
     except:
@@ -22,7 +22,7 @@ def calculate_deadline():
     
     now = datetime.now(tz)
     
-    # Tenta carregar feriados
+    # Carrega feriados com segurança
     try:
         br_holidays = holidays.Brazil(state=config.ESTADO_FERIADOS)
     except:
@@ -34,17 +34,23 @@ def calculate_deadline():
     # Lógica de Dias Úteis
     while days_added < 2:
         current_date += timedelta(days=1)
-        # Se for dia útil (0-4 segunda-sexta) e não for feriado
-        # A comparação (date in holidays) exige objeto date, não datetime
-        if current_date.weekday() < 5 and current_date.date() not in br_holidays:
+        
+        # Verifica se é dia útil (Seg-Sex) e não é feriado
+        is_weekend = current_date.weekday() >= 5
+        
+        # Conversão segura para date() para comparar com holidays
+        is_holiday = current_date.date() in br_holidays if br_holidays else False
+        
+        if not is_weekend and not is_holiday:
             days_added += 1
             
-    # Define horário final do dia e remove microssegundos (CRÍTICO)
-    deadline = current_date.replace(hour=23, minute=59, second=59, microsecond=0)
+    # Define horário final do dia (23:59:59)
+    # IMPORTANTE: replace(tzinfo=None) remove o offset (-03:00) para enviar formato "Naive"
+    # O microsecond=0 remove os milissegundos que APIs costumam rejeitar
+    deadline_naive = current_date.replace(hour=23, minute=59, second=59, microsecond=0, tzinfo=None)
     
-    # O método isoformat() gera: '2026-02-06T23:59:59-03:00'
-    # Isso atende à regra "especifique o offset" da documentação
-    return deadline.isoformat()
+    # Retorna string limpa: "2026-02-10T23:59:59"
+    return deadline_naive.isoformat()
 
 def get_signers_emails(names_text, emails_db_path='email.json'):
     try:
@@ -81,16 +87,15 @@ def get_signers_emails(names_text, emails_db_path='email.json'):
 
 def send_to_authentique(file_obj, signers, doc_name="ATA de Reunião"):
     """
-    Envia para API Authentique (V2) com tratamento de erros de conexão e validação.
+    Envia para API Authentique V2.
     """
-    
     url = "https://api.autentique.com.br/v2/graphql"
     
     if "AUTHENTIQUE_TOKEN" not in st.secrets:
         raise Exception("Token da Authentique não configurado no secrets.")
         
     token = st.secrets["AUTHENTIQUE_TOKEN"]
-    deadline = calculate_deadline() 
+    deadline = calculate_deadline()
     
     # Query GraphQL
     query = """
@@ -103,7 +108,6 @@ def send_to_authentique(file_obj, signers, doc_name="ATA de Reunião"):
     }
     """
     
-    # Variáveis
     variables = {
         "document": {
             "name": doc_name,
@@ -139,11 +143,11 @@ def send_to_authentique(file_obj, signers, doc_name="ATA de Reunião"):
         data = response.json()
         
         if "errors" in data:
-            # Captura erro específico de validação para mostrar mensagem clara
             errors_str = json.dumps(data['errors'])
+            # Diagnóstico detalhado para o usuário
             if "invalid_date" in errors_str:
-                raise Exception(f"Erro de Data na API (Formato Inválido). Enviado: {deadline}")
-            raise Exception(f"Erro Retornado pela Authentique: {errors_str}")
+                raise Exception(f"Formato de Data Rejeitado pela API. Tentativa enviada: '{deadline}'.")
+            raise Exception(f"Erro Authentique: {errors_str}")
             
         return data["data"]["createDocument"]["id"]
         

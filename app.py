@@ -104,7 +104,7 @@ with tab1:
 # --- TAB 2: TRANSPARÊNCIAS ---
 with tab2:
     st.header("Transparências")
-    houve_transp = st.checkbox("Houve Transparências?", value=True)
+    houve_transp = st.checkbox("Houve Transparências?", value=False)
     if houve_transp:
         c_file, c_act = st.columns([4, 1], vertical_alignment="center") # Alinhamento corrigido anteriormente
         f_transp = c_file.file_uploader("PDF das Transparências", type="pdf")
@@ -154,7 +154,7 @@ with tab3:
         
         with st.expander(f"📂 {titulo_display}", expanded=True):
             # Layout Título e Lixeira
-            c1, c2 = st.columns([5, 0.5]) 
+            c1, c2 = st.columns([5, 0.5], vertical_alignment="center")
             new_tit = c1.text_input("Título", value=pauta['titulo'], key=f"t_{pauta_id}")
             st.session_state.pautas_dinamicas[i]['titulo'] = new_tit
             
@@ -226,9 +226,9 @@ with tab4:
     
     # Avisos
     st.subheader("⚠️ Avisos Gerais")
-    chk_avisos = st.checkbox("Houve Avisos?", value=True)
+    chk_avisos = st.checkbox("Houve Avisos?", value=False)
     if chk_avisos:
-        c1, c2 = st.columns([4, 1])
+        c1, c2 = st.columns([4, 1], vertical_alignment="center")
         av_txt = c1.text_area("Texto dos Avisos", value=st.session_state.data_store.get("avisos_text", ""))
         if c2.button("Padronizar (IA)"):
             av_txt = ia_utils.refine_notices(av_txt)
@@ -255,7 +255,7 @@ with tab4:
 
     # Elogios
     st.subheader("💌 Caixinha de Elogios")
-    chk_elogios = st.checkbox("Houve leitura de Elogios?", value=True)
+    chk_elogios = st.checkbox("Houve leitura de Elogios?", value=False)
     if chk_elogios:
         nome = st.text_input("Responsável pela leitura")
         st.session_state.data_store["elogios_leitor"] = nome
