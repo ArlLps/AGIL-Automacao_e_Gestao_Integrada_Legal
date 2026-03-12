@@ -151,6 +151,27 @@ def _render_atas_members_tab() -> None:
             st.rerun()
 
 
+def _render_atas_directorates_tab() -> None:
+    st.subheader("Diretorias de transparências")
+    directorates = atas_admin_utils.load_directorates()
+    rows = [
+        {
+            "name": entry["name"],
+            "slug": entry["slug"],
+            "aliases": ", ".join(entry.get("aliases", [])),
+        }
+        for entry in directorates
+    ]
+    edited_rows = st.data_editor(rows, num_rows="dynamic", use_container_width=True, key="atas_directorates_editor")
+    st.caption("Use `slug` estável para templates. Em `aliases`, informe nomes alternativos separados por vírgula.")
+
+    if st.button("Salvar diretorias", type="primary", key="atas_save_directorates"):
+        atas_admin_utils.save_directorates(edited_rows)
+        _reset_runtime_caches()
+        st.success("Diretorias atualizadas.")
+        st.rerun()
+
+
 def _render_atas_templates_tab() -> None:
     st.subheader("Template de ATA")
     templates = atas_admin_utils.list_templates()
@@ -311,13 +332,15 @@ with tab_organizacao:
     _render_organization_tab()
 
 with tab_atas:
-    subtab_prompts, subtab_membros, subtab_templates, subtab_acervo = st.tabs(
-        ["Prompts IA", "Membros", "Template", "Acervo"]
+    subtab_prompts, subtab_membros, subtab_diretorias, subtab_templates, subtab_acervo = st.tabs(
+        ["Prompts IA", "Membros", "Diretorias", "Template", "Acervo"]
     )
     with subtab_prompts:
         _render_atas_prompts_tab()
     with subtab_membros:
         _render_atas_members_tab()
+    with subtab_diretorias:
+        _render_atas_directorates_tab()
     with subtab_templates:
         _render_atas_templates_tab()
     with subtab_acervo:

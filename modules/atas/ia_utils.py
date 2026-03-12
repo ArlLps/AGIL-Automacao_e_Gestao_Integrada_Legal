@@ -18,20 +18,6 @@ class AtividadeDiretoria(typing.TypedDict):
     Realizado: str
     Planejado: str
 
-TransparenciasSchema = typing.TypedDict(
-    "TransparenciasSchema",
-    {
-        "Projetos": AtividadeDiretoria,
-        "Marketing": AtividadeDiretoria,
-        "Negócios": AtividadeDiretoria,
-        "Jurídico-Financeiro": AtividadeDiretoria,
-        "Parcerias": AtividadeDiretoria,
-        "Gestão de Pessoas": AtividadeDiretoria,
-        "Qualidade": AtividadeDiretoria,
-        "Diretoria Executiva": AtividadeDiretoria,
-    },
-)
-
 # --- Utils de Arquivo ---
 def extract_text_from_pdf(pdf_file, max_pages=20):
     full_text = ""
@@ -51,11 +37,22 @@ def process_transparencies(text_content, user_notes=""):
     client = get_client()
     if not client: return {"Erro": "API Key não configurada."}
 
+    directorates = config.get_directorates()
+    expected_structure = {
+        entry["name"]: {
+            "Realizado": "texto em parágrafo único",
+            "Planejado": "texto em parágrafo único",
+        }
+        for entry in directorates
+    }
+
     prompt = f"""
     Converta os dados brutos abaixo para o padrão da Ata.
     CONTEXTO INPUT: {text_content[:30000] if text_content else "Apenas notas."}
     NOTAS: {user_notes}
     Se uma diretoria não tiver dados, preencha: "Não foram apresentadas atividades."
+    Retorne apenas um JSON válido com exatamente estas diretorias como chaves principais:
+    {json.dumps(expected_structure, ensure_ascii=False)}
     """
     
     try:
@@ -65,11 +62,10 @@ def process_transparencies(text_content, user_notes=""):
             contents=prompt,
             config=types.GenerateContentConfig(
                 system_instruction=config.get_prompt_transparencias_system(),
-                response_mime_type='application/json',
-                response_schema=TransparenciasSchema
+                response_mime_type='application/json'
             )
         )
-        return json.loads(response.text)
+        return config.normalize_transparency_payload(json.loads(response.text))
     except Exception as e:
         return {"Erro": f"Falha na IA: {str(e)}"}
 

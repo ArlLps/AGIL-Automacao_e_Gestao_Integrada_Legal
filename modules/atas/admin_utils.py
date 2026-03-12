@@ -50,6 +50,9 @@ def ensure_runtime_files() -> None:
     _ensure_dir(config.ATA_TEMPLATES_DIR)
     _ensure_dir(config.EXAMPLES_DIR)
 
+    if not os.path.exists(config.DIRECTORATES_PATH):
+        _write_json(config.DIRECTORATES_PATH, config.DEFAULT_DIRECTORATES)
+
     if not os.path.exists(config.AI_PROMPTS_PATH):
         _write_json(
             config.AI_PROMPTS_PATH,
@@ -146,6 +149,42 @@ def save_members(members: Dict[str, str]) -> None:
         if name and name.strip() and email and email.strip()
     }
     _write_json(config.EMAIL_DB_PATH, dict(sorted(cleaned.items(), key=lambda item: item[0].lower())))
+
+
+def load_directorates() -> List[Dict[str, object]]:
+    ensure_runtime_files()
+    return config.get_directorates()
+
+
+def save_directorates(rows: List[Dict[str, object]]) -> None:
+    cleaned = []
+    used_slugs = set()
+    for row in rows:
+        name = str(row.get("name", "")).strip()
+        slug = str(row.get("slug", "")).strip()
+        aliases_raw = str(row.get("aliases", "")).strip()
+        if not name:
+            continue
+        if not slug:
+            slug = _slugify(name)
+        if slug in used_slugs:
+            continue
+        aliases = [alias.strip() for alias in aliases_raw.split(",") if alias.strip()]
+        if name.lower() not in [alias.lower() for alias in aliases]:
+            aliases.append(name)
+        cleaned.append(
+            {
+                "name": name,
+                "slug": slug,
+                "aliases": aliases,
+            }
+        )
+        used_slugs.add(slug)
+
+    if not cleaned:
+        cleaned = config.DEFAULT_DIRECTORATES
+
+    _write_json(config.DIRECTORATES_PATH, cleaned)
 
 
 def get_template_registry() -> Dict[str, object]:

@@ -227,7 +227,7 @@ with tab2:
                         st.rerun()
                     else: st.error(res["Erro"])
         
-        diretorias_ignorar = st.multiselect("Diretorias sem apresentação (ignorar):", options=config.DIRETORIAS)
+        diretorias_ignorar = st.multiselect("Diretorias sem apresentação (ignorar):", options=config.get_directorate_names())
         if diretorias_ignorar and st.session_state.data_store.get("transparencias_data"):
             for d in diretorias_ignorar:
                 if d in st.session_state.data_store["transparencias_data"]:
@@ -237,7 +237,7 @@ with tab2:
         data_t = st.session_state.data_store.get("transparencias_data", {})
         if data_t and "Erro" not in data_t:
             st.subheader("📝 Revisão")
-            for diretoria in config.DIRETORIAS:
+            for diretoria in config.get_directorate_names():
                 if diretoria not in data_t: continue
                 with st.expander(f"🔹 {diretoria}"):
                     data_t[diretoria]["Realizado"] = st.text_area(f"R - {diretoria}", value=data_t[diretoria].get("Realizado", ""), height=100)
@@ -446,15 +446,27 @@ with tab5:
             "mensagens_reconhecimento": {"nomes": st.session_state.data_store.get("appreciation_reader")},
             "tem_transparencias": bool(st.session_state.data_store.get("transparencias_data"))
         }
+        ctx["lista_transparencias"] = []
         
         # Flattening Transparências
         raw_t = st.session_state.data_store.get("transparencias_data", {})
         raw_t_norm = {k.lower(): v for k, v in raw_t.items()}
-        for k, v in config.MAP_JINJA.items():
+        slug_to_name = {entry["slug"]: entry["name"] for entry in config.get_directorates()}
+        for k, v in config.get_map_jinja().items():
             if k in raw_t_norm:
                 ctx[f"tr_{v}"] = True
                 ctx[f"tr_{v}_realizadas"] = raw_t_norm[k]["Realizado"]
                 ctx[f"tr_{v}_planejadas"] = raw_t_norm[k]["Planejado"]
+        for slug, name in slug_to_name.items():
+            if raw_t.get(name):
+                ctx["lista_transparencias"].append(
+                    {
+                        "nome": name,
+                        "slug": slug,
+                        "realizadas": raw_t[name].get("Realizado", ""),
+                        "planejadas": raw_t[name].get("Planejado", ""),
+                    }
+                )
 
         try:
             doc = DocxTemplate(active_template_path)

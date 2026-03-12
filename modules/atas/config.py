@@ -11,24 +11,54 @@ ATA_TEMPLATES_DIR = os.path.join(DATA_DIR, "templates")
 AI_PROMPTS_PATH = os.path.join(DATA_DIR, "ai_prompts.json")
 ATA_TEMPLATE_REGISTRY_PATH = os.path.join(DATA_DIR, "ata_templates.json")
 EXAMPLES_REGISTRY_PATH = os.path.join(DATA_DIR, "examples_registry.json")
+DIRECTORATES_PATH = os.path.join(DATA_DIR, "directorates.json")
 
 # Configurações Gerais
-DIRETORIAS = [
-    "Projetos", "Marketing", "Negócios", "Jurídico-Financeiro",
-    "Parcerias", "Gestão de Pessoas", "Qualidade", "Diretoria Executiva"
+DEFAULT_DIRECTORATES = [
+    {
+        "name": "Projetos",
+        "slug": "projetos",
+        "aliases": ["projetos"],
+    },
+    {
+        "name": "Marketing",
+        "slug": "marketing",
+        "aliases": ["marketing"],
+    },
+    {
+        "name": "Negócios",
+        "slug": "negocios",
+        "aliases": ["negócios", "negocios"],
+    },
+    {
+        "name": "Jurídico-Financeiro",
+        "slug": "jf",
+        "aliases": ["jf", "jurídico-financeiro", "juridico-financeiro"],
+    },
+    {
+        "name": "Parcerias",
+        "slug": "parcerias",
+        "aliases": ["parcerias"],
+    },
+    {
+        "name": "Gestão de Pessoas",
+        "slug": "gp",
+        "aliases": ["gp", "gestão de pessoas", "gestao de pessoas"],
+    },
+    {
+        "name": "Qualidade",
+        "slug": "qualidade",
+        "aliases": ["qualidade"],
+    },
+    {
+        "name": "Diretoria Executiva",
+        "slug": "direx",
+        "aliases": ["direx", "diretoria executiva"],
+    },
 ]
 
 ESTADO_FERIADOS = 'MG'
 TIMEZONE = 'America/Sao_Paulo'
-
-# Mapeamento JSON -> Jinja
-MAP_JINJA = {
-    "projetos": "projetos", "marketing": "marketing", "negócios": "negocios",
-    "negocios": "negocios", "jf": "jf", "jurídico-financeiro": "jf",
-    "juridico-financeiro": "jf", "parcerias": "parcerias", "gp": "gp",
-    "gestão de pessoas": "gp", "gestao de pessoas": "gp", "qualidade": "qualidade",
-    "direx": "direx", "diretoria executiva": "direx"
-}
 
 # --- PROMPTS E EXEMPLOS (FEW-SHOT LEARNING) ---
 
@@ -101,6 +131,71 @@ def _resolve_registry_path(path_value):
     return os.path.normpath(os.path.join(MODULE_DIR, path_value))
 
 
+def get_directorates():
+    directorates = _read_json(DIRECTORATES_PATH, DEFAULT_DIRECTORATES)
+    normalized = []
+    for entry in directorates:
+        name = str(entry.get("name", "")).strip()
+        slug = str(entry.get("slug", "")).strip()
+        aliases = [str(alias).strip() for alias in entry.get("aliases", []) if str(alias).strip()]
+        if not name or not slug:
+            continue
+        if name.lower() not in [alias.lower() for alias in aliases]:
+            aliases.append(name)
+        normalized.append(
+            {
+                "name": name,
+                "slug": slug,
+                "aliases": aliases,
+            }
+        )
+    return normalized or DEFAULT_DIRECTORATES
+
+
+def get_directorate_names():
+    return [entry["name"] for entry in get_directorates()]
+
+
+def get_map_jinja():
+    mapping = {}
+    for entry in get_directorates():
+        for alias in entry.get("aliases", []):
+            mapping[alias.lower()] = entry["slug"]
+    return mapping
+
+
+def build_transparency_template():
+    return {
+        entry["name"]: {
+            "Realizado": "Não foram apresentadas atividades.",
+            "Planejado": "Não foram apresentadas atividades.",
+        }
+        for entry in get_directorates()
+    }
+
+
+def normalize_transparency_payload(payload):
+    if not isinstance(payload, dict):
+        return build_transparency_template()
+
+    normalized = build_transparency_template()
+    mapping = get_map_jinja()
+    slug_to_name = {entry["slug"]: entry["name"] for entry in get_directorates()}
+
+    for raw_name, value in payload.items():
+        slug = mapping.get(str(raw_name).strip().lower())
+        if not slug:
+            continue
+        canonical_name = slug_to_name[slug]
+        if isinstance(value, dict):
+            normalized[canonical_name] = {
+                "Realizado": value.get("Realizado", "Não foram apresentadas atividades."),
+                "Planejado": value.get("Planejado", "Não foram apresentadas atividades."),
+            }
+
+    return normalized
+
+
 def get_ai_prompts():
     prompts = _read_json(AI_PROMPTS_PATH, {})
     return {
@@ -145,5 +240,7 @@ def get_active_example_paths(max_items=None):
     return selected
 
 
+DIRECTORIAS = get_directorate_names()
+MAP_JINJA = get_map_jinja()
 PROMPT_TRANSPARENCIAS_SYSTEM = DEFAULT_PROMPT_TRANSPARENCIAS_SYSTEM
 PROMPT_PAUTAS_SYSTEM = DEFAULT_PROMPT_PAUTAS_SYSTEM

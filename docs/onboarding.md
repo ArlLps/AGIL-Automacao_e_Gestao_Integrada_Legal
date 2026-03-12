@@ -16,13 +16,15 @@ Este pacote inicial prepara o produto para distribuicao com ativos neutros, sem 
 
 1. Acesse `Gerenciamento > Organizacao` e defina nome do produto, nome da organizacao e destinatarios padrao.
 2. Ajuste os nomes de dinâmicas internas, como reconhecimento e mensagens positivas, se o cliente usar outra nomenclatura.
-3. Revise os prompts de IA em `Gerenciamento > ATAs > Prompts IA`.
-4. Substitua ou complemente a lista ficticia de membros em `Gerenciamento > ATAs > Membros`.
-5. Ajuste os templates ativos em `Gerenciamento > ATAs > Template` e `Gerenciamento > Contratos` caso o cliente tenha modelos proprios.
-6. Atualize o acervo de exemplos em `Gerenciamento > ATAs > Acervo` para refletir o estilo desejado.
+3. Revise e ajuste as diretorias em `Gerenciamento > ATAs > Diretorias`.
+4. Revise os prompts de IA em `Gerenciamento > ATAs > Prompts IA`.
+5. Substitua ou complemente a lista ficticia de membros em `Gerenciamento > ATAs > Membros`.
+6. Ajuste os templates ativos em `Gerenciamento > ATAs > Template` e `Gerenciamento > Contratos` caso o cliente tenha modelos proprios.
+7. Atualize o acervo de exemplos em `Gerenciamento > ATAs > Acervo` para refletir o estilo desejado.
 
 ## Observacoes
 
 - Os templates enviados no pacote sao apenas ponto de partida e podem ser substituidos sem alterar codigo.
 - O repositorio nao depende mais de ativos reais da CONSELT para funcionar.
 - O produto agora pode ser entregue para outra Empresa Junior com parametrizacao inicial e sem carregamento de dados sensiveis.
+- Para forks por cliente, use tambem o guia em `docs/personalizacao_fork_ej.md`.

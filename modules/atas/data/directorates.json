@@ -1,0 +1,42 @@
+[
+    {
+        "name": "Projetos",
+        "slug": "projetos",
+        "aliases": ["projetos"]
+    },
+    {
+        "name": "Marketing",
+        "slug": "marketing",
+        "aliases": ["marketing"]
+    },
+    {
+        "name": "Negócios",
+        "slug": "negocios",
+        "aliases": ["negócios", "negocios"]
+    },
+    {
+        "name": "Jurídico-Financeiro",
+        "slug": "jf",
+        "aliases": ["jf", "jurídico-financeiro", "juridico-financeiro"]
+    },
+    {
+        "name": "Parcerias",
+        "slug": "parcerias",
+        "aliases": ["parcerias"]
+    },
+    {
+        "name": "Gestão de Pessoas",
+        "slug": "gp",
+        "aliases": ["gp", "gestão de pessoas", "gestao de pessoas"]
+    },
+    {
+        "name": "Qualidade",
+        "slug": "qualidade",
+        "aliases": ["qualidade"]
+    },
+    {
+        "name": "Diretoria Executiva",
+        "slug": "direx",
+        "aliases": ["direx", "diretoria executiva"]
+    }
+]
