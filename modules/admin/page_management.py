@@ -5,11 +5,56 @@ import streamlit as st
 
 from modules.atas import admin_utils as atas_admin_utils
 from modules.contratos import admin_utils as contratos_admin_utils
+from modules.core import settings as core_settings
 from modules.ui.sidebar import render_sidebar
 
 
 def _reset_runtime_caches() -> None:
     st.cache_data.clear()
+
+
+def _render_organization_tab() -> None:
+    st.subheader("Identidade e defaults")
+    settings = core_settings.load_settings()
+
+    with st.form("organization_settings_form"):
+        product_name = st.text_input("Nome do produto", value=settings["product_name"])
+        organization_name = st.text_input("Nome padrão da organização", value=settings["organization_name"])
+        homepage_caption = st.text_area(
+            "Texto da tela inicial",
+            value=settings["homepage_caption"],
+            height=100,
+        )
+        default_notification_recipients = st.text_input(
+            "Destinatários padrão para notificações",
+            value=settings["default_notification_recipients"],
+        )
+        notification_greeting = st.text_input(
+            "Saudação padrão dos e-mails",
+            value=settings["notification_greeting"],
+        )
+        save = st.form_submit_button("Salvar configurações", type="primary")
+        restore = st.form_submit_button("Restaurar padrão")
+
+    if save:
+        core_settings.save_settings(
+            {
+                "product_name": product_name.strip() or core_settings.DEFAULT_SETTINGS["product_name"],
+                "organization_name": organization_name.strip() or core_settings.DEFAULT_SETTINGS["organization_name"],
+                "homepage_caption": homepage_caption.strip() or core_settings.DEFAULT_SETTINGS["homepage_caption"],
+                "default_notification_recipients": default_notification_recipients.strip(),
+                "notification_greeting": notification_greeting.strip() or core_settings.DEFAULT_SETTINGS["notification_greeting"],
+            }
+        )
+        _reset_runtime_caches()
+        st.success("Configurações da organização atualizadas.")
+        st.rerun()
+
+    if restore:
+        core_settings.save_settings(core_settings.DEFAULT_SETTINGS)
+        _reset_runtime_caches()
+        st.success("Configurações restauradas para o padrão do produto.")
+        st.rerun()
 
 
 def _render_atas_prompts_tab() -> None:
@@ -231,14 +276,19 @@ def _render_contratos_templates_tab() -> None:
 atas_admin_utils.ensure_runtime_files()
 contratos_admin_utils.ensure_runtime_files()
 
-st.set_page_config(page_title="AGIL | Gerenciamento", page_icon="🛠️", layout="wide")
+product_name = core_settings.get_product_name()
+
+st.set_page_config(page_title=f"{product_name} | Gerenciamento", page_icon="🛠️", layout="wide")
 
 render_sidebar(active_page="gerenciamento")
 
-st.title("🛠️ AGIL | Gerenciamento")
+st.title(f"🛠️ {product_name} | Gerenciamento")
 st.caption("Central administrativa do sistema para gestão operacional de ATAs e Contratos.")
 
-tab_atas, tab_contratos = st.tabs(["ATAs", "Contratos"])
+tab_organizacao, tab_atas, tab_contratos = st.tabs(["Organização", "ATAs", "Contratos"])
+
+with tab_organizacao:
+    _render_organization_tab()
 
 with tab_atas:
     subtab_prompts, subtab_membros, subtab_templates, subtab_acervo = st.tabs(

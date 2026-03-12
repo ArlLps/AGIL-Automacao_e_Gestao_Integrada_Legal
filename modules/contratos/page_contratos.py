@@ -7,14 +7,17 @@ import streamlit as st
 from modules.contratos import authentique_utils
 from modules.contratos import config
 from modules.contratos import document_utils
+from modules.core import settings as core_settings
 from modules.ui.sidebar import render_sidebar
 
+product_name = core_settings.get_product_name()
+
 # Configuracao da pagina e navegacao compartilhada
-st.set_page_config(page_title="AGIL | Contratos", page_icon="📝", layout="wide")
+st.set_page_config(page_title=f"{product_name} | Contratos", page_icon="📝", layout="wide")
 
 render_sidebar(active_page="contratos")
 
-st.title("📝 AGIL | Contratos")
+st.title(f"📝 {product_name} | Contratos")
 st.caption("Preenchimento automático de contrato e envio para assinatura via Authentique.")
 
 st.markdown("---")
@@ -28,7 +31,7 @@ available_models = {
 }
 
 if not available_models:
-    st.error("Nenhum modelo de contrato encontrado em modules/contratos/data.")
+    st.error("Nenhum modelo de contrato ativo. Cadastre ou ative um modelo em Gerenciamento.")
     st.stop()
 
 active_model_id = config.get_active_contract_model_id()
@@ -233,7 +236,7 @@ st.subheader("6) Signatarios (Authenique)")
 s1, s2 = st.columns(2)
 email_presidente_assinatura = s1.text_input(
     "Email do Diretor(a) Presidente",
-    placeholder="Ex: presidente@conselt.com",
+    placeholder="Ex: presidencia@organizacao.com",
 )
 email_representante_assinatura = s2.text_input(
     "Email do Representante/Pessoa Fisica",
@@ -359,7 +362,7 @@ if st.session_state.contract_file:
                     file_bytes=st.session_state.contract_file,
                     file_name=st.session_state.contract_filename,
                     signers=signers,
-                    doc_name=numero_contrato or "Contrato CONSELT",
+                    doc_name=numero_contrato or "Contrato",
                 )
                 st.success("Documento enviado para Authentique com sucesso.")
                 st.write(f"ID do documento: {response['id']}")

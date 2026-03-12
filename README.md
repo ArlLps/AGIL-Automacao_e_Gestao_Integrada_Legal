@@ -1,6 +1,6 @@
 # AGIL - Automação e Gestão Integrada Legal
 
-Este repositório agora está organizado como um **sistema integrado modular** para centralizar automações de processos da CONSELT.
+Este repositório está organizado como um **sistema integrado modular** para centralizar automações de processos de uma organização.
 
 ## Estrutura
 
@@ -19,7 +19,10 @@ modules/
 		history_utils.py
 		data/
 			email.json
-			modelo_ata.docx
+			ai_prompts.json
+			ata_templates.json
+			examples_registry.json
+			templates/
 		examples/
 			*.docx
 	contratos/
@@ -28,7 +31,12 @@ modules/
 		document_utils.py
 		authentique_utils.py
 		data/
-			modelo_contrato_ps.docx
+			template_registry.json
+			templates/
+	core/
+		settings.py
+		data/
+			organization_profile.json
 	ui/
 		sidebar.py
 ```
@@ -37,7 +45,7 @@ modules/
 
 - `ATAs`: automação completa de geração, revisão, assinatura e notificação de atas.
 - `Contratos`: preenchimento de contrato com template DOCX, conversão para PDF e envio para assinatura via Authentique.
-- `Gerenciamento`: central administrativa para gerenciar prompts, membros, templates e acervo de conhecimento.
+- `Gerenciamento`: central administrativa para gerenciar identidade da organização, prompts, membros, templates e acervo de conhecimento.
 
 ## Como executar
 
@@ -45,7 +53,13 @@ modules/
 	 - `pip install -r requirements.txt`
 2. Execute a interface inicial:
 	 - `streamlit run app.py`
-3. Na interface inicial, escolha o módulo `ATAs`, `Contratos` ou `Gerenciamento`.
+3. No primeiro uso, acesse `Gerenciamento` para configurar a organização, cadastrar membros e ativar templates.
+4. Depois disso, escolha o módulo `ATAs` ou `Contratos`.
+
+## Onboarding
+
+- O repositório acompanha um kit neutro de onboarding com templates genéricos, exemplos fictícios e dados iniciais de demonstração.
+- As orientações de parametrização inicial estão em `docs/onboarding.md`.
 
 ## Próximos passos
 

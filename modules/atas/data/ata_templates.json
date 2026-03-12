@@ -1,11 +1,11 @@
 {
-    "active_template": "modelo_ata_padrao",
+    "active_template": "ata_reuniao_generica",
     "templates": [
         {
-            "id": "modelo_ata_padrao",
-            "label": "Modelo de ATA padrão",
-            "path": "data\\modelo_ata.docx",
-            "managed": false
+            "id": "ata_reuniao_generica",
+            "label": "Ata de reuniao generica",
+            "path": "data/templates/ata_reuniao_generica.docx",
+            "managed": true
         }
     ]
 }

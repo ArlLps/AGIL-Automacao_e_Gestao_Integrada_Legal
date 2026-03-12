@@ -1,22 +1,25 @@
 import streamlit as st
+from modules.core import settings as core_settings
 from modules.ui.sidebar import render_sidebar
 
+product_name = core_settings.get_product_name()
+
 st.set_page_config(
-    page_title="AGIL | Início",
+    page_title=f"{product_name} | Início",
     page_icon="⚙️",
     layout="wide",
 )
 
 render_sidebar(active_page="inicio")
 
-st.title("⚙️ AGIL | Início")
-st.caption("Plataforma modular para centralizar processos automatizados da CONSELT.")
+st.title(f"⚙️ {product_name} | Início")
+st.caption(core_settings.get_homepage_caption())
 
 st.subheader("Interface inicial")
 
 module_options = {
     "ATAs": {
-        "description": "Automação de geração e gestão de ATAs da CONSELT.",
+        "description": "Automação de geração, revisão e gestão de ATAs da organização.",
         "page": "pages/01_ATAs.py",
         "status": "Disponível",
     },

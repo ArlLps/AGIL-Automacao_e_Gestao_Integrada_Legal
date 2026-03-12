@@ -1,19 +1,12 @@
 {
-    "active_template": "prestacao_servicos",
+    "active_template": "contrato_prestacao_servicos_generico",
     "templates": [
         {
-            "id": "prestacao_servicos",
-            "label": "Contrato de Prestacao de Servicos",
-            "template_path": "data\\modelo_contrato_ps.docx",
+            "id": "contrato_prestacao_servicos_generico",
+            "label": "Contrato de prestacao de servicos generico",
+            "template_path": "data/templates/contrato_prestacao_servicos_generico.docx",
             "form_type": "prestacao_servicos",
-            "managed": false
-        },
-        {
-            "id": "parcerias",
-            "label": "Contrato de Parcerias",
-            "template_path": "data\\modelo_contrato_parcerias.docx",
-            "form_type": "parcerias",
-            "managed": false
+            "managed": true
         }
     ]
 }

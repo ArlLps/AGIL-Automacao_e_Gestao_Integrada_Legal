@@ -46,15 +46,6 @@ def _to_registry_path(path: str) -> str:
     return os.path.relpath(path, config.MODULE_DIR)
 
 
-def _default_template_entry() -> Dict[str, object]:
-    return {
-        "id": "modelo_ata_padrao",
-        "label": "Modelo de ATA padrão",
-        "path": _to_registry_path(config.MODEL_DOCX_PATH),
-        "managed": False,
-    }
-
-
 def ensure_runtime_files() -> None:
     _ensure_dir(config.ATA_TEMPLATES_DIR)
     _ensure_dir(config.EXAMPLES_DIR)
@@ -72,9 +63,6 @@ def ensure_runtime_files() -> None:
     templates = registry.get("templates", [])
     known_paths = {config._resolve_registry_path(entry.get("path")) for entry in templates}
     active_template = registry.get("active_template")
-
-    if os.path.exists(config.MODEL_DOCX_PATH) and config.MODEL_DOCX_PATH not in known_paths:
-        templates.insert(0, _default_template_entry())
 
     for file_name in sorted(os.listdir(config.ATA_TEMPLATES_DIR)):
         if not file_name.lower().endswith(".docx"):
@@ -108,9 +96,7 @@ def ensure_runtime_files() -> None:
         for file_name in sorted(os.listdir(config.EXAMPLES_DIR), reverse=True)
         if file_name.lower().endswith(".docx") and not file_name.startswith("~$")
     ]
-    active_examples = examples_registry.get("active_examples")
-    if not active_examples:
-        active_examples = available_examples[:3]
+    active_examples = examples_registry.get("active_examples", [])
 
     _write_json(
         config.EXAMPLES_REGISTRY_PATH,

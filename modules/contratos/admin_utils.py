@@ -54,19 +54,6 @@ def ensure_runtime_files() -> None:
     active_template = registry.get("active_template")
     known_paths = {config._resolve_registry_path(entry.get("template_path")) for entry in templates}
 
-    for model_id, model_data in config.DEFAULT_CONTRACT_MODELS.items():
-        if model_data["template_path"] in known_paths:
-            continue
-        templates.append(
-            {
-                "id": model_id,
-                "label": model_data["label"],
-                "template_path": _to_registry_path(model_data["template_path"]),
-                "form_type": model_data["form_type"],
-                "managed": False,
-            }
-        )
-
     for file_name in sorted(os.listdir(config.MANAGED_TEMPLATES_DIR)):
         if not file_name.lower().endswith(".docx"):
             continue

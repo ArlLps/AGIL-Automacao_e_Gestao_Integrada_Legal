@@ -6,6 +6,7 @@ import io
 import json
 import uuid
 import pandas as pd
+from modules.core import settings as core_settings
 from modules.atas import ia_utils
 from modules.atas import authentique_utils
 from modules.atas import email_utils
@@ -26,8 +27,11 @@ try:
 except:
     HAS_PDF_CONVERTER = False
 
+product_name = core_settings.get_product_name()
+organization_settings = core_settings.load_settings()
+
 # Configuração da Página
-st.set_page_config(page_title="AGIL | ATAs", layout="wide", page_icon="📄")
+st.set_page_config(page_title=f"{product_name} | ATAs", layout="wide", page_icon="📄")
 
 render_sidebar(active_page="atas")
 
@@ -41,7 +45,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("📄 AGIL | ATAs")
+st.title(f"📄 {product_name} | ATAs")
 
 
 def render_pdf_preview(pdf_bytes, height=720):
@@ -166,12 +170,12 @@ all_members = load_members()
 history_txt, history_count = load_history_context()
 
 def generate_filename():
-    """Gera nome padrão: ATA RG - DD/MM.docx"""
+    """Gera nome padrão genérico para o documento de ata."""
     meta = st.session_state.data_store.get("meta", {})
     if "data_obj" in meta:
         date_str = meta["data_obj"].strftime("%d/%m")
-        return f"ATA RG - {date_str}.docx" # Retorna docx, converte depois se der
-    return "ATA_RG_Generica.docx"
+        return f"Ata_Reuniao_{date_str.replace('/', '_')}.docx"
+    return "Ata_Reuniao.docx"
 
 # Tabs
 tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
@@ -418,11 +422,17 @@ with tab5:
     st.markdown("### 📄 Documento Final")
     col_gen, col_down = st.columns(2)
     
-    filename_base = generate_filename() # Ex: ATA RG - 12/05.docx
+    filename_base = generate_filename()
     active_template_path = config.get_active_ata_template_path()
-    st.caption(f"Template ativo: {active_template_path}")
+    if active_template_path:
+        st.caption(f"Template ativo: {active_template_path}")
+    else:
+        st.warning("Nenhum template de ATA ativo. Configure um modelo em Gerenciamento antes de gerar o documento.")
     
     if col_gen.button("🚀 Gerar Documento", type="primary"):
+        if not active_template_path:
+            st.error("Nenhum template de ATA ativo. Acesse Gerenciamento para cadastrar ou ativar um modelo.")
+            st.stop()
         # Contexto Jinja
         ctx = {
             **st.session_state.data_store["meta"],
@@ -591,8 +601,10 @@ with tab7:
     st.header("Notificação por Email")
     
     prazo_txt = st.session_state.get("final_deadline", "DD/MM/AAAA")
+    default_recipients = organization_settings.get("default_notification_recipients", "")
+    greeting = organization_settings.get("notification_greeting", "Bom dia, boa tarde e boa noite!")
     
-    default_body = f"""Bom dia, boa tarde e boa noite CONSELT!
+    default_body = f"""{greeting}
 [Mensagem personalizada]. Qualquer problema, chama JF! 🔥🔥
 
 [AQUI ENTRA A GIF]
@@ -602,7 +614,7 @@ A assinatura é obrigatória e tem como prazo até o dia {prazo_txt}."""
 
     with st.form("email_form"):
         # Correção de Layout: Input full width fora de colunas apertadas
-        email_to = st.text_input("Para (separe por vírgula):", value="conselt@conselt.com.br, trainees@conselt.com.br")
+        email_to = st.text_input("Para (separe por vírgula):", value=default_recipients)
         subject = st.text_input("Assunto:", value="Assinatura da ATA - Reunião Geral")
         body_content = st.text_area("Corpo do Email", value=default_body, height=200)
         

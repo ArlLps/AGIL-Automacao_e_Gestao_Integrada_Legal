@@ -5,7 +5,6 @@ MODULE_DIR = os.path.dirname(__file__)
 DATA_DIR = os.path.join(MODULE_DIR, "data")
 EXAMPLES_DIR = os.path.join(MODULE_DIR, "examples")
 EMAIL_DB_PATH = os.path.join(DATA_DIR, "email.json")
-MODEL_DOCX_PATH = os.path.join(DATA_DIR, "modelo_ata.docx")
 TEMP_DOCX_PATH = os.path.join(DATA_DIR, "temp_ata.docx")
 TEMP_PDF_PATH = os.path.join(DATA_DIR, "temp_ata.pdf")
 ATA_TEMPLATES_DIR = os.path.join(DATA_DIR, "templates")
@@ -33,7 +32,7 @@ MAP_JINJA = {
 # --- PROMPTS E EXEMPLOS (FEW-SHOT LEARNING) ---
 
 DEFAULT_PROMPT_TRANSPARENCIAS_SYSTEM = """
-Persona (Função): Você é o "Redator Especialista em Transparências" da CONSELT. Sua função exclusiva é receber dados brutos (anotações ou tópicos de slides) das diretorias e transformá-los na seção "Transparências" da Ata de Reunião Geral. Você atua sob as diretrizes da coordenadoria de Jurídico-Financeiro.
+Persona (Função): Você é o "Redator Especialista em Transparências" da organização. Sua função exclusiva é receber dados brutos (anotações ou tópicos de slides) das diretorias e transformá-los na seção "Transparências" da ata de reunião geral. Você atua sob as diretrizes da coordenação responsável.
 Objetivo Primário: Converter listas e tópicos soltos em um texto narrativo, formal, coeso e padronizado, estruturado estritamente em parágrafos contínuos para as subseções "Realizadas" e "Planejadas" de cada diretoria.
 
 Regras de Ouro (Invioláveis):
@@ -65,7 +64,7 @@ EXEMPLO DE SAÍDA IDEAL DE PLANEJADAS (Siga este tom e formato):
 """
 
 DEFAULT_PROMPT_PAUTAS_SYSTEM = """
-Persona (Função): Você é o "Redator Especialista em Pautas Eventuais" da CONSELT. Sua função é redigir o texto narrativo das discussões, dinâmicas ou capacitações que ocorrem fora das pautas fixas da Reunião Geral. Você atua sob as diretrizes da coordenadoria de Jurídico-Financeiro.
+Persona (Função): Você é o "Redator Especialista em Pautas Eventuais" da organização. Sua função é redigir o texto narrativo das discussões, dinâmicas ou capacitações que ocorrem fora das pautas fixas da reunião geral. Você atua sob as diretrizes da coordenação responsável.
 Objetivo Primário: Transformar anotações sobre discussões e apresentações em um texto narrativo, coeso, formal e impessoal (3ª pessoa), resumindo a pauta de forma clara e direta.
 
 Regras de Ouro (Invioláveis):
@@ -127,7 +126,7 @@ def get_active_ata_template_path():
         if entry.get("id") == active_template and resolved_path and os.path.exists(resolved_path):
             return resolved_path
 
-    return MODEL_DOCX_PATH
+    return None
 
 
 def get_active_example_paths(max_items=None):
@@ -138,9 +137,6 @@ def get_active_example_paths(max_items=None):
         for file_name in os.listdir(EXAMPLES_DIR)
         if file_name.lower().endswith(".docx") and not file_name.startswith("~$")
     } if os.path.exists(EXAMPLES_DIR) else {}
-
-    if not active_examples:
-        active_examples = sorted(available_examples.keys(), reverse=True)
 
     selected = [available_examples[file_name] for file_name in active_examples if file_name in available_examples]
     if max_items is not None:
