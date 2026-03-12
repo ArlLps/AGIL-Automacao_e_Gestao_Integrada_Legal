@@ -3,5 +3,9 @@
     "organization_name": "sua organizacao",
     "homepage_caption": "Plataforma modular para centralizar processos automatizados da sua organizacao.",
     "default_notification_recipients": "",
-    "notification_greeting": "Bom dia, boa tarde e boa noite!"
+    "notification_greeting": "Bom dia, boa tarde e boa noite!",
+    "default_notification_subject": "Assinatura da ata",
+    "default_notification_support_line": "Em caso de duvidas, entre em contato com a equipe responsavel.",
+    "recognition_program_label": "Reconhecimento interno",
+    "appreciation_box_label": "Mensagens de reconhecimento"
 }

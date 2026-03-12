@@ -18,15 +18,19 @@ class AtividadeDiretoria(typing.TypedDict):
     Realizado: str
     Planejado: str
 
-class TransparenciasSchema(typing.TypedDict):
-    Projetos: AtividadeDiretoria
-    Marketing: AtividadeDiretoria
-    Negócios: AtividadeDiretoria
-    JF: AtividadeDiretoria
-    Parcerias: AtividadeDiretoria
-    GP: AtividadeDiretoria
-    Qualidade: AtividadeDiretoria
-    Direx: AtividadeDiretoria
+TransparenciasSchema = typing.TypedDict(
+    "TransparenciasSchema",
+    {
+        "Projetos": AtividadeDiretoria,
+        "Marketing": AtividadeDiretoria,
+        "Negócios": AtividadeDiretoria,
+        "Jurídico-Financeiro": AtividadeDiretoria,
+        "Parcerias": AtividadeDiretoria,
+        "Gestão de Pessoas": AtividadeDiretoria,
+        "Qualidade": AtividadeDiretoria,
+        "Diretoria Executiva": AtividadeDiretoria,
+    },
+)
 
 # --- Utils de Arquivo ---
 def extract_text_from_pdf(pdf_file, max_pages=20):

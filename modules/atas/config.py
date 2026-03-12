@@ -14,8 +14,8 @@ EXAMPLES_REGISTRY_PATH = os.path.join(DATA_DIR, "examples_registry.json")
 
 # Configurações Gerais
 DIRETORIAS = [
-    "Projetos", "Marketing", "Negócios", "JF", 
-    "Parcerias", "GP", "Qualidade", "Direx"
+    "Projetos", "Marketing", "Negócios", "Jurídico-Financeiro",
+    "Parcerias", "Gestão de Pessoas", "Qualidade", "Diretoria Executiva"
 ]
 
 ESTADO_FERIADOS = 'MG'
@@ -23,10 +23,11 @@ TIMEZONE = 'America/Sao_Paulo'
 
 # Mapeamento JSON -> Jinja
 MAP_JINJA = {
-    "projetos": "projetos", "marketing": "marketing", "negócios": "negocios", 
+    "projetos": "projetos", "marketing": "marketing", "negócios": "negocios",
     "negocios": "negocios", "jf": "jf", "jurídico-financeiro": "jf",
-    "parcerias": "parcerias", "gp": "gp", "gestão de pessoas": "gp", 
-    "qualidade": "qualidade", "direx": "direx"
+    "juridico-financeiro": "jf", "parcerias": "parcerias", "gp": "gp",
+    "gestão de pessoas": "gp", "gestao de pessoas": "gp", "qualidade": "qualidade",
+    "direx": "direx", "diretoria executiva": "direx"
 }
 
 # --- PROMPTS E EXEMPLOS (FEW-SHOT LEARNING) ---

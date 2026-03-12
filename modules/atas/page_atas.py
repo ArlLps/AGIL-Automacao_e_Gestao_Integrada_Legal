@@ -29,6 +29,8 @@ except:
 
 product_name = core_settings.get_product_name()
 organization_settings = core_settings.load_settings()
+recognition_label = organization_settings.get("recognition_program_label", "Reconhecimento interno")
+appreciation_label = organization_settings.get("appreciation_box_label", "Mensagens de reconhecimento")
 
 # Configuração da Página
 st.set_page_config(page_title=f"{product_name} | ATAs", layout="wide", page_icon="📄")
@@ -346,28 +348,28 @@ with tab4:
 
     st.markdown("---")
     
-    # Sparckselt
-    st.subheader("💎 Sparckselt")
-    chk_sparck = st.checkbox("Houve passagem do Sparckselt?", value=False)
-    if chk_sparck:
+    # Reconhecimento interno
+    st.subheader(f"💎 {recognition_label}")
+    chk_recognition = st.checkbox(f"Houve passagem de {recognition_label.lower()}?", value=False)
+    if chk_recognition:
         c1, c2 = st.columns(2)
         ant = c1.text_input("Quem passou?")
         nov = c2.text_input("Quem recebeu?")
         mot = st.text_area("Motivo")
-        st.session_state.data_store["sparckselt"] = {"anterior": ant, "novo": nov, "motivo": mot}
+        st.session_state.data_store["recognition_program"] = {"anterior": ant, "novo": nov, "motivo": mot}
     else:
-        st.session_state.data_store["sparckselt"] = {}
+        st.session_state.data_store["recognition_program"] = {}
 
     st.markdown("---")
 
-    # Elogios
-    st.subheader("💌 Caixinha de Elogios")
-    chk_elogios = st.checkbox("Houve leitura de Elogios?", value=False)
-    if chk_elogios:
+    # Mensagens positivas
+    st.subheader(f"💌 {appreciation_label}")
+    chk_appreciation = st.checkbox(f"Houve leitura em {appreciation_label.lower()}?", value=False)
+    if chk_appreciation:
         nome = st.text_input("Responsável pela leitura")
-        st.session_state.data_store["elogios_leitor"] = nome
+        st.session_state.data_store["appreciation_reader"] = nome
     else:
-        st.session_state.data_store["elogios_leitor"] = ""
+        st.session_state.data_store["appreciation_reader"] = ""
 
 # --- TAB 5: REVISÃO E CONCLUSÃO ---
 with tab5:
@@ -438,10 +440,10 @@ with tab5:
             **st.session_state.data_store["meta"],
             "lista_pautas": st.session_state.pautas_dinamicas,
             "texto_avisos": st.session_state.data_store.get("avisos_text", ""),
-            "texto_sparckselt": bool(st.session_state.data_store.get("sparckselt", {}).get("novo")),
-            "s": st.session_state.data_store.get("sparckselt", {}),
-            "texto_elogios": bool(st.session_state.data_store.get("elogios_leitor")),
-            "ce": {"nomes": st.session_state.data_store.get("elogios_leitor")},
+            "tem_reconhecimento": bool(st.session_state.data_store.get("recognition_program", {}).get("novo")),
+            "reconhecimento": st.session_state.data_store.get("recognition_program", {}),
+            "tem_mensagens_reconhecimento": bool(st.session_state.data_store.get("appreciation_reader")),
+            "mensagens_reconhecimento": {"nomes": st.session_state.data_store.get("appreciation_reader")},
             "tem_transparencias": bool(st.session_state.data_store.get("transparencias_data"))
         }
         
@@ -603,9 +605,11 @@ with tab7:
     prazo_txt = st.session_state.get("final_deadline", "DD/MM/AAAA")
     default_recipients = organization_settings.get("default_notification_recipients", "")
     greeting = organization_settings.get("notification_greeting", "Bom dia, boa tarde e boa noite!")
+    default_subject = organization_settings.get("default_notification_subject", "Assinatura da ata")
+    support_line = organization_settings.get("default_notification_support_line", "Em caso de duvidas, entre em contato com a equipe responsavel.")
     
     default_body = f"""{greeting}
-[Mensagem personalizada]. Qualquer problema, chama JF! 🔥🔥
+[Mensagem personalizada]. {support_line}
 
 [AQUI ENTRA A GIF]
 
@@ -615,7 +619,7 @@ A assinatura é obrigatória e tem como prazo até o dia {prazo_txt}."""
     with st.form("email_form"):
         # Correção de Layout: Input full width fora de colunas apertadas
         email_to = st.text_input("Para (separe por vírgula):", value=default_recipients)
-        subject = st.text_input("Assunto:", value="Assinatura da ATA - Reunião Geral")
+        subject = st.text_input("Assunto:", value=default_subject)
         body_content = st.text_area("Corpo do Email", value=default_body, height=200)
         
         # Correção: O Uploader ficava feio sem label

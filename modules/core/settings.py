@@ -12,6 +12,10 @@ DEFAULT_SETTINGS = {
     "homepage_caption": "Plataforma modular para centralizar processos automatizados da sua organizacao.",
     "default_notification_recipients": "",
     "notification_greeting": "Bom dia, boa tarde e boa noite!",
+    "default_notification_subject": "Assinatura da ata",
+    "default_notification_support_line": "Em caso de duvidas, entre em contato com a equipe responsavel.",
+    "recognition_program_label": "Reconhecimento interno",
+    "appreciation_box_label": "Mensagens de reconhecimento",
 }
 
 
@@ -65,3 +69,19 @@ def get_default_notification_recipients():
 
 def get_notification_greeting():
     return load_settings()["notification_greeting"]
+
+
+def get_default_notification_subject():
+    return load_settings()["default_notification_subject"]
+
+
+def get_default_notification_support_line():
+    return load_settings()["default_notification_support_line"]
+
+
+def get_recognition_program_label():
+    return load_settings()["recognition_program_label"]
+
+
+def get_appreciation_box_label():
+    return load_settings()["appreciation_box_label"]

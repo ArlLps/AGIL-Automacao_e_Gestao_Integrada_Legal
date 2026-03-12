@@ -15,10 +15,11 @@ Este pacote inicial prepara o produto para distribuicao com ativos neutros, sem 
 ## Primeira configuracao recomendada
 
 1. Acesse `Gerenciamento > Organizacao` e defina nome do produto, nome da organizacao e destinatarios padrao.
-2. Revise os prompts de IA em `Gerenciamento > ATAs > Prompts IA`.
-3. Substitua ou complemente a lista ficticia de membros em `Gerenciamento > ATAs > Membros`.
-4. Ajuste os templates ativos em `Gerenciamento > ATAs > Template` e `Gerenciamento > Contratos` caso o cliente tenha modelos proprios.
-5. Atualize o acervo de exemplos em `Gerenciamento > ATAs > Acervo` para refletir o estilo desejado.
+2. Ajuste os nomes de dinâmicas internas, como reconhecimento e mensagens positivas, se o cliente usar outra nomenclatura.
+3. Revise os prompts de IA em `Gerenciamento > ATAs > Prompts IA`.
+4. Substitua ou complemente a lista ficticia de membros em `Gerenciamento > ATAs > Membros`.
+5. Ajuste os templates ativos em `Gerenciamento > ATAs > Template` e `Gerenciamento > Contratos` caso o cliente tenha modelos proprios.
+6. Atualize o acervo de exemplos em `Gerenciamento > ATAs > Acervo` para refletir o estilo desejado.
 
 ## Observacoes
 

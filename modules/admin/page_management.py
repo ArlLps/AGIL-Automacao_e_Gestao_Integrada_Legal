@@ -33,6 +33,22 @@ def _render_organization_tab() -> None:
             "Saudação padrão dos e-mails",
             value=settings["notification_greeting"],
         )
+        default_notification_subject = st.text_input(
+            "Assunto padrão das notificações",
+            value=settings["default_notification_subject"],
+        )
+        default_notification_support_line = st.text_input(
+            "Linha padrão de suporte nos e-mails",
+            value=settings["default_notification_support_line"],
+        )
+        recognition_program_label = st.text_input(
+            "Nome da dinâmica de reconhecimento",
+            value=settings["recognition_program_label"],
+        )
+        appreciation_box_label = st.text_input(
+            "Nome da seção de mensagens positivas",
+            value=settings["appreciation_box_label"],
+        )
         save = st.form_submit_button("Salvar configurações", type="primary")
         restore = st.form_submit_button("Restaurar padrão")
 
@@ -44,6 +60,10 @@ def _render_organization_tab() -> None:
                 "homepage_caption": homepage_caption.strip() or core_settings.DEFAULT_SETTINGS["homepage_caption"],
                 "default_notification_recipients": default_notification_recipients.strip(),
                 "notification_greeting": notification_greeting.strip() or core_settings.DEFAULT_SETTINGS["notification_greeting"],
+                "default_notification_subject": default_notification_subject.strip() or core_settings.DEFAULT_SETTINGS["default_notification_subject"],
+                "default_notification_support_line": default_notification_support_line.strip() or core_settings.DEFAULT_SETTINGS["default_notification_support_line"],
+                "recognition_program_label": recognition_program_label.strip() or core_settings.DEFAULT_SETTINGS["recognition_program_label"],
+                "appreciation_box_label": appreciation_box_label.strip() or core_settings.DEFAULT_SETTINGS["appreciation_box_label"],
             }
         )
         _reset_runtime_caches()
